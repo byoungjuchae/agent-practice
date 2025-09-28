@@ -1,4 +1,4 @@
-list = [one, two, three]
+list = ["one", "two", "three"]
 for index in list :
   print(index)
 
