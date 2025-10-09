@@ -14,9 +14,9 @@ CHATROUTER = os.getenv("OPENROUTER")
 BASE_URL = os.getenv("OPENROUTER_API_BASE")
 
 llm = ChatOpenAI(
-    api_key= CHATROUTER,
-    base_url = BASE_URL,
-    model= "google/gemini-2.5-flash-lite",
+    api_key=CHATROUTER,
+    base_url=BASE_URL,
+    model="google/gemini-2.5-flash-lite",
     temperature=0.5
 )
 
@@ -27,14 +27,14 @@ prompt_text = """you are a assistant you have to 'answer' the 'question'.
             example 1:
             hello my name is kong sun
             반갑다 닝겐, 너의 이름이 콩순이라고? 그래서 나보고 어쩌라고
-        
-            
+
+
             Here is the question:
             {question}
 
             """
 prompt = ChatPromptTemplate.from_template(prompt_text)
-chain = {"question":itemgetter("question")} | prompt | llm | StrOutputParser()
+chain = {"question": itemgetter("question")} | prompt | llm | StrOutputParser()
 
-response = chain.invoke({"question":"안녕 나는 소세지를 좋아해"})
+response = chain.invoke({"question": "안녕 나는 소세지를 좋아해"})
 print(response)
