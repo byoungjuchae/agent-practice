@@ -8,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langgraph.graph import StateGraph, END
+from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 os.environ["LANGCHAIN_TRACING_V2"] = 'true'
@@ -26,22 +27,36 @@ model = ChatOpenAI(
 
 class State(TypedDict) :
     region : str
-    today : NotRequired[str]
+    today : NotRequired[datetime]
     user_prompt : str
     answer : NotRequired[str]
 
 async def today(state: State) :
-    define_prompt = """당신은 사용자에게 날짜를 알려주는 에이전트입니다.
-    사용자가 "날짜"와 관련된 질문을 하면 시스템 날짜가 아닌 사용자가 실제 현실세계 날짜를 정확히 알려주세요.
-    "한국" 일경우엔 한국 날짜만 "미국" 일경우엔 미국날짜만 "둘다"일 경우겐 양쪽 나라의 시간 모두 알려주세요.
+
+    global today
+    define_prompt = """당신은 사용자에게 국가를 입력받아 정규화 해주는 에이전트입니다.
+    사용자에게 "국가" 를 어떤 언어로든 입력받으면 해당 국가명을 "한국어로" 번역해서 알려주세요.
+    다른거 다 필요없이 오롯이 나라이름만 답변해
+    '한국', '미국', '중국', '일본' 식으로 접두사 접미사 다 제외
+    
+    예시1) 대한민국 관련 -> '한국' , 미국 관련 -> '미국', 중국 관련 -> '중국'
     
     region : {region}
     """
 
     prompt = ChatPromptTemplate.from_template(define_prompt)
     chain = {"region": itemgetter("region")} | prompt | model | StrOutputParser()
-    today = await chain.ainvoke({"region": state["region"]})
-    return {"today": today.strip()}
+    region = await chain.ainvoke({"region": state["region"]})
+    # import pdb; pdb.set_trace()
+    if region == "한국" :
+
+        KST = timezone(timedelta(hours=9))
+        today = datetime.now(KST).strftime("%Y-%m-%d")
+    elif region =="미국" :
+        UST = timezone(timedelta())
+        today = datetime.now(UST).strftime("%Y-%m-%d")
+
+    return {"today": today}
 
 
 async def influencer(state : State) :
@@ -93,8 +108,12 @@ graph_builder.add_edge("influencer", END)
 
 graph = graph_builder.compile()
 
+
+
+
+# ===== 5) 실행 예시 =====
 async def main():
-    init_state: State = {"region": "한국", "user_prompt": "오늘 생일인 연예인은 누구야?"}
+    init_state: State = {"region": "korea", "user_prompt": "오늘 생일인 연예인은 누구야?"}
     final_state = await graph.ainvoke(init_state)
 
     print("\n[질문]")
