@@ -1,3 +1,5 @@
 langchain
+langgraph
 langchain-openai
+langchain_core
 python-dotenv
